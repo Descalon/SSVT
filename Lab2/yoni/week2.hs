@@ -89,7 +89,7 @@ sortBySnd = sortBy (flip compare `on` snd)
 -- sort the whole list, but use the string variant in the zip
 sortedScoreList = sortBySnd (zip x (scoreAll list y))
 
--- exercise 4
+-- exercise 4 one and a half hour, an hour extra for testing and such (currying)
 isPermutation :: Eq a => [a] -> [a] -> Bool
 isPermutation xs ys = (and ([elem x ys | x <- xs] ++ [elem y xs | y <- ys])) && (length [elem x ys | x <- xs] == length [elem y xs | y <- ys])
 
