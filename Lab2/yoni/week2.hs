@@ -139,3 +139,20 @@ permTest8 n = isPermutation [1..n] (reverse [1..n])
 quickTest1 = quickCheckResult permTest8
 
 -- Another good quick test would be shuffling the 2nd permList, although simply reversing covers quite a lot on itself
+
+-- Implementing and testing ROT13 encoding
+rot13Char :: Char -> Char
+rot13Char c   | c >= 'A' && c <= 'Z' = chr((((mod) (((ord c) - (ord 'A')) + 13) 26) + (ord 'A')))
+              | c >= 'a' && c <= 'z' = chr((((mod) (((ord c) - (ord 'a')) + 13) 26) + (ord 'a')))
+              | otherwise = c
+
+rot13 :: [Char] -> [Char]
+rot13 cs = [rot13Char c | c <- cs]
+
+rot13QuickCheck :: [Char] -> Bool
+rot13QuickCheck cx = (cx `isSubsequenceOf` (rot13(rot13 cx))) && (length cx == length(rot13(rot13(cx))))
+quickCheckResult rot13QuickCheck 
+{--
++++ OK, passed 100 tests.
+Success {numTests = 100, numDiscarded = 0, labels = fromList [([],100)], classes = fromList [], tables = fromList [], output = "+++ OK, passed 100 tests.\n"}
+--}
