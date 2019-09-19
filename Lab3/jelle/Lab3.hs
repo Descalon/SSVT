@@ -80,16 +80,19 @@ countChar s char = foldl (\a c -> if c == char then a + 1 else a) 0 s
 -- +++ OK, passed 100 tests.
 -- So implementation seems correct.
 
--- Output is arrowfree
-cnfProp0 :: Form -> Bool
-cnfProp0 f = not (any (\x -> x == '>' || x == '<') (show (cnf f)))
 
-testCnf0 :: Property
-testCnf0 = forAll sizedForm cnfProp0
+-- UNCOMMENT CODE & USE CNF IMPLEMENTATION TO TEST
+
+-- Output is arrowfree
+-- cnfProp0 :: Form -> Bool
+-- cnfProp0 f = not (any (\x -> x == '>' || x == '<') (show (cnf f)))
+
+-- testCnf0 :: Property
+-- testCnf0 = forAll sizedForm cnfProp0
 
 -- Input and output are logically equivalent
-cnfProp1 :: Form -> Bool
-cnfProp1 f = equiv f (cnf f)
+-- cnfProp1 :: Form -> Bool
+-- cnfProp1 f = equiv f (cnf f)
 
-testCnf1 :: Property
-testCnf1 = forAll sizedForm cnfProp0
+-- testCnf1 :: Property
+-- testCnf1 = forAll sizedForm cnfProp0
