@@ -32,6 +32,15 @@ equivalence f1 f2 = entails f1 f2 && entails f2 f1
 
 {-- Assignment 3
   Indication of time spent: (Start : 11:30)
+  Documentation: cnf coverts a haskel generated Form into the Conjuctive Normalform,
+  which constists only of the following grammar:
+
+          L ::= p|¬p
+          D ::= L|L∨D
+          C ::= D|D∧C
+
+  Usage is: cnf <form>, function of each step is implemented in definition.
+
   Implementation: Below
 --}
 ex1 = (Neg (Dsj [Prop 1, Neg(Prop 2)]))
