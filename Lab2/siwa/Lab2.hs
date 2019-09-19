@@ -5,7 +5,6 @@ import Data.Char
 import System.Random
 import Test.QuickCheck
 
--- import Data.Typeable
 import qualified Data.Text    as Text
 import qualified Data.Text.IO as Text
 
