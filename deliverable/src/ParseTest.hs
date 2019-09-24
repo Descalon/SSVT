@@ -1,3 +1,7 @@
+{--Exercise 2 (10 min, more like 90 if counting the generator for exercise 4)
+    Using the generator we made for exercise 4, we can test that an arbitrary Form will parse to itself (by using show)
+--}
+
 module ParseTest where
     import Lib
     import Generator

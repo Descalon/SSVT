@@ -1,4 +1,4 @@
-{--Exercise 4 (50 min)
+{--Exercise 4 (90 min)
     Notes: the generater is limited to produce more manageable test inputs.
 
     Test report: ran the two test_* properties with quickcheck. All cases successful
