@@ -20,6 +20,7 @@ type Rel a = [(a,a)]
   Exercise 1: Implement a random data generator for the datatype Set Int
 --}
 
+
 -- Implementation that uses QuickCheck
 
 -- Exercise 4: 90 mins
@@ -53,6 +54,10 @@ trClos xs = traClos' xs (-1)
                   | otherwise = traClos' genTransitives ((length(genTransitives)) - (length xs))
                       where
                         genTransitives = xs ++ [ (x, z) | (x, y) <- xs, (w, z) <- xs, y==w, (elem) (x,z) xs == False]
+
+
+inTrans :: Eq a => Rel a -> Bool
+inTrans xs = all (\x-> elem x xs) [(x,z) | (x,y) <- xs, (w,z) <- xs, y == w]
 
 
 {--
