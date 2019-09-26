@@ -3,6 +3,15 @@ module Generator where
     import System.Random
     import Test.QuickCheck
 
+    has :: (Eq a) => [a] -> a -> Bool
+    has = flip elem
+
+    unique :: (Eq a) => [a] -> [a]
+    unique [] = []
+    unique (x:xs)
+        | has xs x = unique xs
+        | otherwise = x : unique xs
+
     generateInts :: IO [Int]
     generateInts = do
         g <- newStdGen
@@ -11,13 +20,13 @@ module Generator where
     generateSet :: Int -> IO (Set Int)
     generateSet count  = do
         rs <- generateInts 
-        let rs' = take count rs
+        let rs' = unique $ take count rs
         return (Set rs')
 
     generateSet' :: Int -> Gen (Set Int)
     generateSet' size = do
         k <- choose (0, size)
         l <- sequence [arbitrary | _ <- [1..k]]
-        return (Set l)
+        return (Set $ unique l)
     
     sizedSet = sized generateSet'
