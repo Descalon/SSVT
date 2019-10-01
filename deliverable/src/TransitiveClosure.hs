@@ -1,5 +1,6 @@
 module TransitiveClosure where
     import Lib
+    import Control.Monad.Fix
     import Data.List
 
     type Rel a = [(a,a)]
@@ -10,20 +11,8 @@ module TransitiveClosure where
     r @@ s =
         nub [ (x,z) | (x,y) <- r, (w,z) <- s, y == w ]
 
-    trClos :: Ord a => Rel a -> Rel a
-    trClos rel = sortPairs (trClosHelper ((rel @@ rel) ++ rel) rel)
+    fp :: Eq a => (a -> a) -> a -> a
+    fp f = fix (\g x -> if x == f x then x else g (f x))
 
-    trClosHelper inputRel outputRel
-        | inputRel == outputRel = outputRel
-        | otherwise             = trClosHelper (nub ((inputRel @@ inputRel) ++ inputRel)) inputRel
-
-    sortPairs :: Ord a => Rel a -> Rel a
-    sortPairs rel = sortBy comparePairs rel
-
-    comparePairs :: Ord a => (a,a) -> (a,a) -> Ordering
-    comparePairs (a,b) (c,d)
-        | a < c     = LT
-        | a > c     = GT
-        | b < d     = LT
-        | b > d     = GT
-        | otherwise = EQ
+    trClos :: (Ord a, Eq a) => Rel a -> Rel a
+    trClos = sort . fp (\r -> nub $ (r @@ r) ++ r)
