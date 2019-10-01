@@ -3,31 +3,10 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: QuickCheck-2.13.1@sha256:b6c85c6a7ffb800f52aad50dc28d224a968d1a28b3fc5f41ccb91c7b9c252d18,6764
-    pantry-tree:
-      size: 2202
-      sha256: b370014de38704b4082bc720ef1a9c09fb871b04fc5c03678580803cb6296ba9
-  original:
-    hackage: QuickCheck-2.13.1
-- completed:
-    hackage: random-1.1@sha256:7b67624fd76ddf97c206de0801dc7e888097e9d572974be9b9ea6551d76965df,1777
-    pantry-tree:
-      size: 637
-      sha256: 14a1b01728c5584e87c9fa00746a66e28ffd89dd2c0eabd334c8463953496e1b
-  original:
-    hackage: random-1.1
-- completed:
-    hackage: containers-0.6.0.1@sha256:50024f330653c702a339f7743522b3c2a4fff9c6bf5a7071affe270da2ee649a,15843
-    pantry-tree:
-      size: 4933
-      sha256: 9a33a9d98310bf01b0ee2dd041dfdaaabfcbc07547a4c60443678a22cb114299
-  original:
-    hackage: containers-0.6.0.1
+packages: []
 snapshots:
 - completed:
-    size: 524104
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/5.yaml
-    sha256: 3c146eebc1b383211ea49d5422fb3d63d699da12307b4bc989107300eb579d60
-  original: lts-14.5
+    size: 523700
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/7.yaml
+    sha256: 8e3f3c894be74d71fa4bf085e0a8baae7e4d7622d07ea31a52736b80f8b9bb1a
+  original: lts-14.7
