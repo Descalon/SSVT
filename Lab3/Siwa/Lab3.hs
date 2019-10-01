@@ -66,6 +66,9 @@ convertToCNF (Cnj [a, b]) = Cnj [(convertToCNF a), (convertToCNF b)]
 {-- Assignment 5
   Indication of time spent: (Start : 15:19) (End: 18:18)
 --}
+ {---
+    5.1
+ -}
 sub :: Form -> Set Form
 sub (Prop x) = Set [Prop x]
 sub (Neg f) = unionSet (Set [Neg f]) (sub f)
