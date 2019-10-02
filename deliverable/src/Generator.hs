@@ -1,3 +1,8 @@
+{-- Exercise 1
+    Time spent: ~25 min
+
+--}
+
 module Generator where
     import SetOrd
     import System.Random
