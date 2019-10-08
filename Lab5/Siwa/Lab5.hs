@@ -18,14 +18,6 @@ Relevant QuickCheck Properties
 Test Report
 Implementation:
 --}
-
--- expM 4 2 12 = 4. Eigenlijk is het (4^2) mod 12
--- exm :: Integer -> Integer -> Integer -> Integer
--- exm x 0 n = 1
--- exm x 1 n = x `mod` n
--- exm x e n = if even e then exm ((x*x) `mod` n) (e `div` 2) n else
---             x * (exm ((x*x) `mod` n) ((e-1) `div` 2) n)
-
 exM :: Integer -> Integer -> Integer -> Integer
 exM x e m =
     let exM' c e' = if e' < e then exM' c' (e'+1) else c'
@@ -73,6 +65,23 @@ testPrimeMR k (x:xs)= do
                       result <- primeMR k x
                       if (result == True) then print(x) else
                         testPrimeMR k xs
+
+
+-- exerc 5
+-- produceMersenne randomly checks one of the first 9 primes whether the result
+-- of 2 ^ p - 1 is also prime. If they are also prime, then they are mersenne
+-- primes. This is checked with the website
+-- http://mathworld.wolfram.com/MersennePrime.html, which lists the first few
+-- Mersenne primes.
+-- Picking a prime above the first 9 makes the program take too much time, so
+-- these are not checked.
+
+produceMersenne :: IO Bool
+produceMersenne = do
+    r <- randomRIO (0,8)
+    putStrLn ("Prime: " ++ (show (primes !! r)))
+    putStrLn ("Also prime? : " ++ (show ((2 ^ (primes !! r)) - 1)))
+    (primeMR 1 ((2 ^ (primes !! r)) - 1))
 
 -- Exercise 6
 genPos :: Gen Integer
