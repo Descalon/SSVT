@@ -1,5 +1,5 @@
 module Lab5 where
-    
+
 import Data.List
 import System.Random
 import Lecture5
@@ -10,10 +10,10 @@ exM :: Integer -> Integer -> Integer -> Integer
 exM _ 0 _ = 1
 exM 0 _ _ = 0
 exM _ _ 0 = 0
-exM x y m 
+exM x y m
     | isPowerOf2 y = computeMod x y m
     | otherwise    = ((Lab5.exM x greatestPower m) * (Lab5.exM x (y - greatestPower) m)) `mod` 5
-        where 
+        where
             greatestPower = getGreatestPowerOf2 y 0
 
 computeMod :: Integer -> Integer -> Integer -> Integer
@@ -38,8 +38,8 @@ checkExM x y m = Lab5.exM x y m == expM x y m
 
 -- Assignment 2
 -- Test report: using compositesTest checks whether results from composites are
--- not prime. Uses the prime function from Lecture5 module. CompositesTest with 
--- values 500, 5000, 10000, 20000 and 100000 all yield True, so implementation 
+-- not prime. Uses the prime function from Lecture5 module. CompositesTest with
+-- values 500, 5000, 10000, 20000 and 100000 all yield True, so implementation
 -- seems correct.
 composites :: [Integer]
 composites = [x | x <- [1..], any (\y -> x `mod` y == 0) [2..(x - 1)]]
@@ -52,7 +52,7 @@ compositesTest n = all (\x -> (not . prime) x) (take n Lab5.composites)
 -- Test report: use testFermat with argument k to get the lowest number that
 -- fools primeTestsF (primeTestsF says it is prime, while in fact it is not).
 -- running testFermat 5 times with k = 1 yields 39, 33, 21, 15 and 28, average
--- of 27.2. The same with k = 2 yields 65, 259, 365, 1729 and 91, average of 
+-- of 27.2. The same with k = 2 yields 65, 259, 365, 1729 and 91, average of
 -- 501.8. k = 3 yields 703, 703, 1105, 15, 2821, average of 1069.4. The same
 -- with k = 4 yields 8911, 2701, 15841, 1729, 2821, average of 6400.6.
 -- Higher values of k seems to make primeTestsF more accurate (the average
@@ -68,16 +68,16 @@ testFermatHelper k x = do
 -- Assignment 4
 -- The Miller-Rabin primality check with Carmichael numbers keeps running, which
 -- might be an indication that it is more accurate than the Fermat function: no
--- Carmichael number is found which passes the primeMR function. The Fermat 
+-- Carmichael number is found which passes the primeMR function. The Fermat
 -- test, however, fails at the first Carmichael number, and also subsequent
 -- Carmichael numbers. This matches the information on Wikipedia: Carmichael
 -- numbers are never prime, but will always pass the Fermat algorithm as prime.
 
 carmichael :: [Integer]
-carmichael = [ (6*k+1)*(12*k+1)*(18*k+1) | 
-    k <- [2..], 
-    prime (6*k+1), 
-    prime (12*k+1), 
+carmichael = [ (6*k+1)*(12*k+1)*(18*k+1) |
+    k <- [2..],
+    prime (6*k+1),
+    prime (12*k+1),
     prime (18*k+1) ]
 
 testFermatCarmichael :: Int -> IO Integer
@@ -105,7 +105,7 @@ testMRCarmichaelHelper k x = do
 -- mersenne primes. This is checked with the website 
 -- http://mathworld.wolfram.com/MersennePrime.html, which lists the first few
 -- Mersenne primes.
--- Picking a prime above the first 9 makes the program take too much time, so 
+-- Picking a prime above the first 9 makes the program take too much time, so
 -- these are not checked.
 -- The PrimeIndex variant of the function takes one argument: the index of the
 -- in the list of primes produced by the primes function. It then checks whether
@@ -134,12 +134,12 @@ produceMersennePrimeIndex x = do
 -- to collected items from the tree. It uses a collect function to get all the
 -- elements from the tree, and a list comprehension function that gets all the
 -- elements in the provided list comprehension.
--- The testTree functions can be used to determine whether for all values up to 
+-- The testTree functions can be used to determine whether for all values up to
 -- a given n the compareCollectList functions return True. This checks whether
 -- the statements in question 1 and 2 are valid. Running testTree1 and testTree2
 -- with an n value of 200 both result in True, so the statements are probably
--- correct. (The compareCollectList functions are called with arguments from 1 
--- up to the n value given to testTree, so they are not just checked with a 
+-- correct. (The compareCollectList functions are called with arguments from 1
+-- up to the n value given to testTree, so they are not just checked with a
 -- single n.)
 tree1 n = grow (step1 n) (1,1)
 step1 n = \ (x,y) -> if x+y <= n then [(x+y,x),(x,x+y)] else [] -- step function
