@@ -1,3 +1,20 @@
+{-- Exercise 1
+    Main implementation based on material from Khan Academy (https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/fast-modular-exponentiation)
+    Performance tested by using the testPerformances function and enabeling the GHCI statistics (:set +s). The results can vary wildly and given is a list of tests run:
+
+    components (x, e, m) > 1000
+    slowExM : 9.984s,  10.094s, 10.828s
+    exM     : 10.469s,  9.938s, 10.781s
+    exM'    : 10.484s, 10.391s, 10.547s
+
+    comps > 100
+    slowExM : 171.875ms, 140.625ms, 109.375ms
+    exM     : 125.000ms, 109.375ms, 156.250ms
+    exM'    : 140.625ms, 125.000ms, 187.500ms
+
+    
+--}
+
 module ModularExponentiation where
     import Lib
     import Test.QuickCheck
@@ -36,14 +53,14 @@ module ModularExponentiation where
                                  else
                                     selectSquares sqs x (b-1)
 
-    --exM' :: Integer -> Integer -> Integer -> Integer
+    exM' :: Integer -> Integer -> Integer -> Integer
     exM' x e m = x' % m
         where 
             l = floor $ logBase 2 (fromIntegral e) 
             sqs = reverse $ collectSquares x (2^l) m
             x' = product $ selectSquares sqs e l
     
-    clamp = 0
+    clamp = 100
     genPos :: Gen (Integer, Integer, Integer)
     genPos = (arbitrary :: Gen (Integer,Integer,Integer)) `suchThat` (\ (x,y,z) -> x > clamp && y > clamp && z > clamp)
 
@@ -52,37 +69,30 @@ module ModularExponentiation where
 
     wrapper f (x,e,m) = (f x e m) >= 0
         
-    diffNs :: Integer -> Integer -> Float
-    diffNs s e = (fromIntegral (e - s))
+    diffMs :: Integer -> Integer -> Float
+    diffMs s e = (fromIntegral (e - s)) / (10 ^ 9)
 
-    testPerformance :: (Integer, Integer, Integer) -> (Integer -> Integer -> Integer -> Integer) -> IO (Integer, Float)
-    testPerformance (x, e, m) f = do
+    testPerformance :: (Integer -> Integer -> Integer -> Integer) -> IO Float
+    testPerformance f = do
         s <- getCPUTime
-        printf "started on %i\n" s
-        let r = f x e m
+        quickCheck $ forAll genPos $ \ (x,e,m) -> (f x e m) >= 0
         e <- getCPUTime
-        printf "ended on %i\n" e
+        let d = diffMs s e
+        return d
 
-        printf "result is %i\n" r
-        let d = diffNs s e
-        return (r,d)
-
-    printResult :: String -> (Integer, Float) -> IO ()
-    printResult s (r,d) = do
+    printResult :: String -> Float -> IO ()
+    printResult s d = do
         printf s
-        printf "\nRan for %0.3f ns\n" d
+        printf "\nRan for %0.3f ms\n" d
         return ()
     
-    testPerformances :: (Integer, Integer, Integer) -> IO Bool
-    testPerformances t = do
-        m1@(r1,d1) <- testPerformance t slowExM
-        printResult "slowExM" m1
-        m2@(r2,d2) <- testPerformance t exM
-        printResult "exM" m2
-        m3@(r3,d3) <- testPerformance t exM'
-        printResult "exM2" m3
-        return (r1 == r2 && r2 == r3)
-
-    prop_x t = monadicIO $ do
-        result <- run (testPerformances t)
-        assert $ result
+    testPerformances :: IO ()
+    testPerformances = do
+        d1 <- testPerformance slowExM
+        printResult "slowExM" d1
+        d2 <- testPerformance exM
+        printResult "exM" d2
+        d3 <- testPerformance exM'
+        printResult "exM2" d3
+        
+        return ()
