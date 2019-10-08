@@ -5,7 +5,7 @@ import System.Random
 import Lecture5
 import Test.QuickCheck
 
-import Criterion.Measurement
+-- import Criterion.Measurement
 
 
 -- main = secs <$> time_ exM' 58 131 15 >>= print
