@@ -138,6 +138,12 @@ testFermatHelper k x = do
     b <- primeTestsF k x
     if b == True && x `elem` (take (fromIntegral x) Lab5.composites) then return x else testFermatHelper k (x + 1)
 
+testPrimeTestsF :: [Integer] -> Int -> IO()
+testPrimeTestsF (x:xs) k = do
+                            result <- primeTestsF k x
+                            if (result == True) then print(x) else
+                              testPrimeTestsF xs k
+
 -- Exercise 4
 carmichael :: [Integer]
 carmichael = [ (6*k+1)*(12*k+1)*(18*k+1) |
@@ -163,7 +169,7 @@ carmichael = [ (6*k+1)*(12*k+1)*(18*k+1) |
 -- Performse testPrimeTestsF with carmichael numbers.
 testPrimeTestsFCarmichael k = testPrimeTestsF carmichael k
 -- 4.3
--- Tests the primeMR with an array of integers by choise. 
+-- Tests the primeMR with an array of integers by choise.
 testPrimeMR :: Int -> [Integer] -> IO()
 testPrimeMR _ []    = print("Finished Test")
 testPrimeMR k (x:xs)= do
