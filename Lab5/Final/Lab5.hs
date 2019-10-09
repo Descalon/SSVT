@@ -26,81 +26,79 @@ import System.CPUTime
     
 --}
 
-module ModularExponentiation where
+(%) :: Integer -> Integer -> Integer
+a % b = a `mod` b
 
-    (%) :: Integer -> Integer -> Integer
-    a % b = a `mod` b
+slowExM :: Integer -> Integer -> Integer -> Integer
+slowExM x e m = (x ^ e) % m
 
-    slowExM :: Integer -> Integer -> Integer -> Integer
-    slowExM x e m = (x ^ e) % m
+exM :: Integer -> Integer -> Integer -> Integer
+exM x e m = 
+    let f c e' = if e' < e then f c' (e'+1) else c'
+            where c' = (x * c) % m
+    in f 1 1
 
-    exM :: Integer -> Integer -> Integer -> Integer
-    exM x e m = 
-        let f c e' = if e' < e then f c' (e'+1) else c'
-                where c' = (x * c) % m
-        in f 1 1
+getBitSize :: Integer -> Int
+getBitSize x = floor $ logBase 2 $ fromIntegral x
 
-    getBitSize :: Integer -> Int
-    getBitSize x = floor $ logBase 2 $ fromIntegral x
+collectSquares :: Integer -> Integer -> Integer -> [Integer]
+collectSquares x e m = 
+    let f x' e' = if e' < e then c : f c (e' * 2) else [c]
+            where c = (x' * x') % m
+        first = x % m
+    in first : (f x 2)
 
-    collectSquares :: Integer -> Integer -> Integer -> [Integer]
-    collectSquares x e m = 
-        let f x' e' = if e' < e then c : f c (e' * 2) else [c]
-                where c = (x' * x') % m
-            first = x % m
-        in first : (f x 2)
+selectSquares :: [Integer] -> Integer -> Int -> [Integer]
+selectSquares _ _ (-1) = []
+selectSquares [] _ _ = []
+selectSquares (sq:sqs) x b = if testBit x b then
+                                sq : selectSquares sqs x (b-1)
+                                else
+                                selectSquares sqs x (b-1)
 
-    selectSquares :: [Integer] -> Integer -> Int -> [Integer]
-    selectSquares _ _ (-1) = []
-    selectSquares [] _ _ = []
-    selectSquares (sq:sqs) x b = if testBit x b then
-                                    sq : selectSquares sqs x (b-1)
-                                 else
-                                    selectSquares sqs x (b-1)
+exM' :: Integer -> Integer -> Integer -> Integer
+exM' x e m = x' % m
+    where 
+        l = floor $ logBase 2 (fromIntegral e) 
+        sqs = reverse $ collectSquares x (2^l) m
+        x' = product $ selectSquares sqs e l
 
-    exM' :: Integer -> Integer -> Integer -> Integer
-    exM' x e m = x' % m
-        where 
-            l = floor $ logBase 2 (fromIntegral e) 
-            sqs = reverse $ collectSquares x (2^l) m
-            x' = product $ selectSquares sqs e l
+clamp = 100
+genPos :: Gen (Integer, Integer, Integer)
+genPos = (arbitrary :: Gen (Integer,Integer,Integer)) `suchThat` (\ (x,y,z) -> x > clamp && y > clamp && z > clamp)
+
+genList :: Gen [(Integer, Integer, Integer)]
+genList = listOf genPos
+
+wrapper f (x,e,m) = (f x e m) >= 0
     
-    clamp = 100
-    genPos :: Gen (Integer, Integer, Integer)
-    genPos = (arbitrary :: Gen (Integer,Integer,Integer)) `suchThat` (\ (x,y,z) -> x > clamp && y > clamp && z > clamp)
+diffMs :: Integer -> Integer -> Float
+diffMs s e = (fromIntegral (e - s)) / (10 ^ 9)
 
-    genList :: Gen [(Integer, Integer, Integer)]
-    genList = listOf genPos
+testPerformance :: (Integer -> Integer -> Integer -> Integer) -> IO Float
+testPerformance f = do
+    s <- getCPUTime
+    quickCheck $ forAll genPos $ \ (x,e,m) -> (f x e m) >= 0
+    e <- getCPUTime
+    let d = diffMs s e
+    return d
 
-    wrapper f (x,e,m) = (f x e m) >= 0
-        
-    diffMs :: Integer -> Integer -> Float
-    diffMs s e = (fromIntegral (e - s)) / (10 ^ 9)
+printResult :: String -> Float -> IO ()
+printResult s d = do
+    printf s
+    printf "\nRan for %0.3f ms\n" d
+    return ()
 
-    testPerformance :: (Integer -> Integer -> Integer -> Integer) -> IO Float
-    testPerformance f = do
-        s <- getCPUTime
-        quickCheck $ forAll genPos $ \ (x,e,m) -> (f x e m) >= 0
-        e <- getCPUTime
-        let d = diffMs s e
-        return d
-
-    printResult :: String -> Float -> IO ()
-    printResult s d = do
-        printf s
-        printf "\nRan for %0.3f ms\n" d
-        return ()
+testPerformances :: IO ()
+testPerformances = do
+    d1 <- testPerformance slowExM
+    printResult "slowExM" d1
+    d2 <- testPerformance exM
+    printResult "exM" d2
+    d3 <- testPerformance exM'
+    printResult "exM2" d3
     
-    testPerformances :: IO ()
-    testPerformances = do
-        d1 <- testPerformance slowExM
-        printResult "slowExM" d1
-        d2 <- testPerformance exM
-        printResult "exM" d2
-        d3 <- testPerformance exM'
-        printResult "exM2" d3
-        
-        return ()
+    return ()
 -- Exercise 2
 -- Test report: using compositesTest checks whether results from composites are
 -- not prime. Uses the prime function from Lecture5 module.
