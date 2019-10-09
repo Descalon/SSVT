@@ -1,6 +1,7 @@
 module Lib where 
     import Data.List
     import Data.Char
+    import System.Random
     import Test.QuickCheck
 
     infix 1 --> 
@@ -16,241 +17,212 @@ module Lib where
 
     ($$) :: a -> (a -> b) -> b
     ($$) = flip ($)
-
-    update :: Eq a => (a -> b) -> (a,b) -> a -> b
-    update f (x,y) = \ z -> if x == z then y else f z 
-
-    updates :: Eq a => (a -> b) -> [(a,b)] -> a -> b
-    updates = foldl update 
-
-    type Var = String
-    type Env = Var -> Integer
-
-    data Expr = I Integer
-            | V Var 
-            | Add Expr Expr 
-            | Subtr Expr Expr 
-            | Mult Expr Expr 
-            deriving (Eq,Show)
-
-    eval :: Expr -> Env -> Integer 
-    eval (I i) _ = i 
-    eval (V name) env = env name
-    eval (Add e1 e2) env = (eval e1 env) + (eval e2 env)
-    eval (Subtr e1 e2) env = (eval e1 env) - (eval e2 env)
-    eval (Mult e1 e2) env = (eval e1 env) * (eval e2 env)
-
-    assign :: Var -> Expr -> Env -> Env 
-    assign var expr env =  update env (var, eval expr env)
-
-    initEnv :: Env 
-    initEnv = \ _ -> undefined
-
-    initE :: Env
-    initE = const undefined
-
-    example = initEnv $$ 
-            assign "x" (I 3) # 
-            assign "y" (I 5) # 
-            assign "x" (Mult (V "x") (V "y")) #
-            eval (V "x")
-
-    while :: (a -> Bool) -> (a -> a) -> a -> a
-    while = until . (not.)
-
-    euclid m n = (m,n) $$ while (\ (x,y) -> x /= y) 
-                (\ (x,y) -> if x > y then (x-y,y) 
-                                    else (x,y-x)) #
-                fst
-
-    euclid' m n = fst $ eucl (m,n) where
-        eucl = until (uncurry  (==))
-            (\ (x,y) -> if x > y then (x-y,y) else (x,y-x))
-
-    whiler :: (a -> Bool) -> (a -> a) -> (a -> b) -> a -> b
-    whiler p f r = while p f # r
-
-    euclid2 m n = (m,n) $$
-            whiler (\ (x,y) -> x /= y) 
-                    (\ (x,y) -> if x > y then (x-y,y) 
-                                        else (x,y-x))
-                    fst
-
-    fibonacci :: Integer -> Integer
-    fibonacci n = fibon (0,1,n) where
-    fibon = whiler 
-            (\ (_,_,n) -> n > 0)
-            (\ (x,y,n) -> (y,x+y,n-1))
-            (\ (x,_,_) -> x)
-
-    fb :: Integer -> Integer
-    fb n = fb' 0 1 n where 
-    fb' x y 0 = x 
-    fb' x y n = fb' y (x+y) (n-1)
-
-    fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
-
-    type Name = Int
-
-    data Form = Prop Name
-            | Neg  Form
-            | Cnj [Form]
-            | Dsj [Form]
-            | Impl Form Form 
-            | Equiv Form Form 
-            deriving (Eq,Ord)
-
-    instance Show Form where 
-        show (Prop x)       = show x
-        show (Neg f)        = '-' : show f 
-        show (Cnj fs)       = "*(" ++ showLst fs ++ ")"
-        show (Dsj fs)       = "+(" ++ showLst fs ++ ")"
-        show (Impl f1 f2)   = "(" ++ show f1 ++ "==>" 
-                                ++ show f2 ++ ")"
-        show (Equiv f1 f2)  = "(" ++ show f1 ++ "<=>" 
-                                ++ show f2 ++ ")"
-
-    showLst,showRest :: [Form] -> String
-    showLst [] = ""
-    showLst (f:fs) = show f ++ showRest fs
-    showRest [] = ""
-    showRest (f:fs) = ' ': show f ++ showRest fs
-
-    p = Prop 1
-    q = Prop 2
-    r = Prop 3 
-
-    form1 = Equiv (Impl p q) (Impl (Neg q) (Neg p))
-    form2 = Equiv (Impl p q) (Impl (Neg p) (Neg q))
-    form3 = Impl (Cnj [Impl p q, Impl q r]) (Impl p r)
-
-    propNames :: Form -> [Name]
-    propNames = sort.nub.pnames where 
-    pnames (Prop name) = [name]
-    pnames (Neg f)  = pnames f
-    pnames (Cnj fs) = concatMap pnames fs
-    pnames (Dsj fs) = concatMap pnames fs
-    pnames (Impl f1 f2)  = concatMap pnames [f1,f2]
-    pnames (Equiv f1 f2) = concatMap pnames [f1,f2]
-
-    type Valuation = [(Name,Bool)]
-
-    -- | all possible valuations for lists of prop letters
-    genVals :: [Name] -> [Valuation]
-    genVals [] = [[]]
-    genVals (name:names) = map ((name,True) :) (genVals names)
-                            ++ map ((name,False):) (genVals names)
-
-    -- | generate all possible valuations for a formula
-    allVals :: Form -> [Valuation]
-    allVals = genVals . propNames
-
-    type ValFct = Name -> Bool
-
-    val2fct :: Valuation -> ValFct
-    val2fct = updates (\ _ -> undefined)
-
-    fct2val :: [Name] -> ValFct -> Valuation
-    fct2val domain f = map (\x -> (x,f x)) domain 
-
-    evl :: Valuation -> Form -> Bool
-    evl [] (Prop c)    = error ("no info: " ++ show c)
-    evl ((i,b):xs) (Prop c)
-        | c == i    = b
-        | otherwise = evl xs (Prop c)
-    evl xs (Neg f)  = not (evl xs f)
-    evl xs (Cnj fs) = all (evl xs) fs
-    evl xs (Dsj fs) = any (evl xs) fs
-    evl xs (Impl f1 f2) = evl xs f1 --> evl xs f2
-    evl xs (Equiv f1 f2) = evl xs f1 == evl xs f2
-
-    satisfiable :: Form -> Bool
-    satisfiable f = any (\ v -> evl v f) (allVals f)
-
-    data Token 
-        = TokenNeg
-        | TokenCnj
-        | TokenDsj
-        | TokenImpl
-        | TokenEquiv 
-        | TokenInt Int 
-        | TokenOP
-        | TokenCP
-        deriving (Show,Eq)
-
-    lexer :: String -> [Token]
-    lexer [] = []
-    lexer (c:cs) | isSpace c = lexer cs
-                | isDigit c = lexNum (c:cs) 
-    lexer ('(':cs) = TokenOP : lexer cs
-    lexer (')':cs) = TokenCP : lexer cs
-    lexer ('*':cs) = TokenCnj : lexer cs
-    lexer ('+':cs) = TokenDsj : lexer cs
-    lexer ('-':cs) = TokenNeg : lexer cs 
-    lexer ('=':'=':'>':cs) = TokenImpl : lexer cs
-    lexer ('<':'=':'>':cs) = TokenEquiv : lexer cs
-    lexer (x:_) = error ("unknown token: " ++ [x])
-
-    lexNum cs = TokenInt (read num) : lexer rest
-        where (num,rest) = span isDigit cs
-
-    type Parser a b = [a] -> [(b,[a])]
-
-    succeed :: b -> Parser a b
-    succeed x xs = [(x,xs)]
-
-    parseForm :: Parser Token Form 
-    parseForm (TokenInt x: tokens) = [(Prop x,tokens)]
-    parseForm (TokenNeg : tokens) =
-        [ (Neg f, rest) | (f,rest) <- parseForm tokens ]
-    parseForm (TokenCnj : TokenOP : tokens) = 
-            [ (Cnj fs, rest) | (fs,rest) <- parseForms tokens ]
-    parseForm (TokenDsj : TokenOP : tokens) = 
-            [ (Dsj fs, rest) | (fs,rest) <- parseForms tokens ]
-    parseForm (TokenOP : tokens) = 
-        [ (Impl f1 f2, rest) | (f1,ys) <- parseForm tokens,
-                                (f2,rest) <- parseImpl ys ]
-        ++
-        [ (Equiv f1 f2, rest) | (f1,ys) <- parseForm tokens,
-                                (f2,rest) <- parseEquiv ys ] 
-    parseForm tokens = []
-
-    parseForms :: Parser Token [Form] 
-    parseForms (TokenCP : tokens) = succeed [] tokens
-    parseForms tokens = 
-        [(f:fs, rest) | (f,ys) <- parseForm tokens, 
-                        (fs,rest) <- parseForms ys ]
-
-    parseImpl :: Parser Token Form
-    parseImpl (TokenImpl : tokens) = 
-        [ (f,ys) | (f,y:ys) <- parseForm tokens, y == TokenCP ]
-    parseImpl tokens = []
-
-    parseEquiv :: Parser Token Form
-    parseEquiv (TokenEquiv : tokens) = 
-        [ (f,ys) | (f,y:ys) <- parseForm tokens, y == TokenCP ]
-    parseEquiv tokens = []
-
-    parse :: String -> [Form]
-    parse s = [ f | (f,_) <- parseForm (lexer s) ]
-
-    arrowfree :: Form -> Form 
-    arrowfree (Prop x) = Prop x 
-    arrowfree (Neg f) = Neg (arrowfree f)
-    arrowfree (Cnj fs) = Cnj (map arrowfree fs)
-    arrowfree (Dsj fs) = Dsj (map arrowfree fs)
-    arrowfree (Impl f1 f2) = 
-        Dsj [Neg (arrowfree f1), arrowfree f2]
-    arrowfree (Equiv f1 f2) = 
-        Dsj [Cnj [f1', f2'], Cnj [Neg f1', Neg f2']]
-            where f1' = arrowfree f1
-                  f2' = arrowfree f2
-
-    nnf :: Form -> Form 
-    nnf (Prop x) = Prop x
-    nnf (Neg (Prop x)) = Neg (Prop x)
-    nnf (Neg (Neg f)) = nnf f
-    nnf (Cnj fs) = Cnj (map nnf fs)
-    nnf (Dsj fs) = Dsj (map nnf fs)
-    nnf (Neg (Cnj fs)) = Dsj (map (nnf.Neg) fs)
-    nnf (Neg (Dsj fs)) = Cnj (map (nnf.Neg) fs)
+    
+    factorsNaive :: Integer -> [Integer]
+    factorsNaive n0 = factors' n0 2 where
+      factors' 1 _ = []
+      factors' n m
+        | n `mod` m == 0 = m : factors' (n `div` m) m
+        | otherwise      =     factors' n (m+1)
+    
+    factors :: Integer -> [Integer]
+    factors n0 = let
+       ps0 = takeWhile (\ m -> m^2 <= n0) primes
+     in factors' n0 ps0 where
+       factors' 1 _  = []
+       factors' n [] = [n]
+       factors' n (p:ps)
+        | n `mod` p == 0 = p: factors' (n `div` p) (p:ps)
+        | otherwise      =    factors' n ps
+    
+    prime :: Integer -> Bool
+    prime n = factors n == [n]
+    
+    primes :: [Integer]
+    primes = 2 : filter prime [3..]
+    
+    mers :: Integer -> Integer
+    mers 1  = 2^2-1;    mers 2  = 2^3-1;     mers 3  = 2^5-1
+    mers 4  = 2^7-1;    mers 5  = 2^13-1;    mers 6  = 2^17-1
+    mers 7  = 2^19-1;   mers 8  = 2^31-1;    mers 9  = 2^61-1
+    mers 10 = 2^89-1;   mers 11 = 2^107-1;   mers 12 = 2^127-1
+    mers 13 = 2^521-1;  mers 14 = 2^607-1;   mers 15 = 2^1279-1
+    mers 16 = 2^2203-1; mers 17 = 2^2281-1;  mers 18 = 2^3217-1
+    mers 19 = 2^4253-1; mers 20 = 2^4423-1;  mers 21 = 2^9689-1
+    mers 22 = 2^9941-1; mers 23 = 2^11213-1; mers 24 = 2^19937-1
+    mers 25 = 2^21701-1;
+    mers _  = undefined
+    
+    bin2int :: [Int] -> Int
+    bin2int = bin . reverse where
+      bin []  = 0
+      bin [0] = 0
+      bin [1] = 1
+      bin (0:bs) = 2 * bin bs
+      bin (1:bs) = 2 * bin bs + 1
+      bin _      = error "not a binary digit list"
+    
+    addM :: Integer -> Integer -> Integer -> Integer
+    addM x y = rem (x+y)
+    
+    multM :: Integer -> Integer -> Integer -> Integer
+    multM x y = rem (x*y)
+    
+    invM :: Integer -> Integer -> Integer
+    invM x n = let
+       (u,v) = fctGcd x n
+       copr  = x*u + v*n == 1
+       i     = if signum u == 1 then u else u + n
+     in
+       if copr then i else error "no inverse"
+    
+    fGcd :: Integer -> Integer -> Integer
+    fGcd a b = if b == 0 then a
+                         else fGcd b (rem a b)
+    
+    fctGcd :: Integer -> Integer -> (Integer,Integer)
+    fctGcd a b =
+      if b == 0
+      then (1,0)
+      else
+         let
+           (q,r) = quotRem a b
+           (s,t) = fctGcd b r
+         in (t, s - q*t)
+    
+    coprime :: Integer -> Integer -> Bool
+    coprime n m = fGcd n m == 1
+    
+    coprime' :: Integer -> Integer -> Bool
+    coprime' n m = let (x,y) = fctGcd n m
+                   in x*n + y*m == 1
+    
+    data Tree a = T a [Tree a] deriving (Eq,Ord,Show)
+    
+    grow :: (node -> [node]) -> node -> Tree node
+    
+    grow step seed = T seed (map (grow step) (step seed))
+    
+    takeT :: Int -> Tree a -> Tree a
+    
+    takeT 0 (T x _) = T x []
+    takeT n (T x ts) = T x (map (takeT (n-1)) ts)
+    
+    coprimeT :: Tree (Integer,Integer)
+    coprimeT = grow f (1,1)
+    
+    f :: (Integer,Integer) -> [(Integer,Integer)]
+    f (n,m) = [(n+m,m),(n,n+m)]
+    
+    pairs :: [(Integer,Integer)]
+    pairs = concatMap (\ n -> zip [1..n] (repeat n)) [1..]
+    
+    coprimes :: [(Integer,Integer)]
+    coprimes = filter (uncurry coprime) pairs
+    
+    expM ::  Integer -> Integer -> Integer -> Integer
+    expM x y = rem (x^y)
+    
+    -- primeTestF :: Integer -> IO Bool
+    -- primeTestF n = do
+    --    a <- randomRIO (2, n-1) :: IO Integer
+    --    print(a)
+    --    return (exM a (n-1) n == 1)
+    
+    -- primeTestsF :: Int -> Integer -> IO Bool
+    -- primeTestsF k n = do
+    --  as <- sequence $ fmap (\_-> randomRIO (2,n-1)) [1..k]
+    --  return (all (\ a -> exM a (n-1) n == 1) as)
+    
+    decomp :: Integer -> (Integer,Integer)
+    decomp n0 = decomp' (0,n0) where
+      decomp' = until (odd.snd) (\ (m,n) -> (m+1,div n 2))
+    
+    -- mrComposite :: Integer -> Integer -> Bool
+    -- mrComposite x n = let
+    --     (r,s) = decomp (n-1)
+    --     fs     = takeWhile (/= 1)
+    --        (map (\ j -> exM x (2^j*s) n)  [0..r])
+    --   in
+    --     exM x s n /= 1 && last fs /= (n-1)
+    
+    -- primeMR :: Int -> Integer -> IO Bool
+    -- primeMR _ 2 = return True
+    -- primeMR 0 _ = return True
+    -- primeMR k n = do
+    --     a <- randomRIO (2, n-1) :: IO Integer
+    --     if exM a (n-1) n /= 1 || mrComposite a n
+    --     then return False else primeMR (k-1) n
+    
+    composites :: [Integer]
+    composites = error "not yet implemented"
+    
+    encodeDH :: Integer -> Integer -> Integer -> Integer
+    encodeDH p k m = m*k `mod` p
+    
+    -- decodeDH :: Integer -> Integer -> Integer -> Integer -> Integer
+    -- decodeDH p ga b c = let
+    --     gab' = exM ga ((p-1)-b) p
+    --   in
+    --     rem (c*gab') p
+    
+    -- encode :: Integer -> Integer -> Integer -> Integer
+    -- encode p k m = let
+    --    p' = p-1
+    --    e  = head [ x | x <- [k..], gcd x p' == 1 ]
+    --  in
+    --    exM m e p
+    
+    -- decode :: Integer -> Integer -> Integer -> Integer
+    -- decode p k m = let
+    --    p' = p-1
+    --    e  = head [ x | x <- [k..], gcd x p' == 1 ]
+    --    d  = invM e p'
+    --  in
+    --    exM m d p
+    
+    -- cipher :: Integer -> Integer
+    -- cipher = encode secret bound
+    
+    -- decipher :: Integer -> Integer
+    -- decipher = decode secret bound
+    
+    totient :: Integer -> Integer
+    totient n = toInteger $ length [ k | k <- [1..n], gcd k n == 1 ]
+    
+    phi :: Integer -> Integer -> Integer
+    phi p q = (p - 1) * (q - 1)
+    
+    select :: Integer -> Integer -> Integer
+    select p q = let
+       t = phi p q
+     in
+       head [ x | x <- [3..], gcd x t == 1 ]
+    
+    rsaPublic :: Integer -> Integer -> (Integer,Integer)
+    rsaPublic p q = let
+        e = select p q
+      in
+        (e,p*q)
+    
+    rsaPrivate ::  Integer -> Integer -> (Integer,Integer)
+    rsaPrivate p q = let
+       e = select p q
+       t = phi p q
+       d = invM e t
+      in
+       (d,p*q)
+    
+    -- rsaEncode :: (Integer,Integer) -> Integer -> Integer
+    -- rsaEncode (e,n) m =  exM m e n
+    
+    -- rsaDecode :: (Integer,Integer) -> Integer -> Integer
+    -- rsaDecode = rsaEncode
+    
+    -- trapdoor :: (Integer,Integer) -> Integer -> Integer
+    -- trapdoor = rsaEncode
+    
+    secret, bound :: Integer
+    secret = mers 18
+    bound  = 131
+    
